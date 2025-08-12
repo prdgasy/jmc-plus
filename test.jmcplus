@@ -1,0 +1,10 @@
+const hi = say 'hi';
+
+function test() {
+    hi;
+}
+
+function another_function() {
+    say 'hello from jmc';
+    hi;
+}
