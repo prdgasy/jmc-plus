@@ -18,30 +18,86 @@ function compileJMCPlus(inputFilePath, outputFilePath, namespace, packformat, cw
         // Lecture du contenu du fichier .jmcplus
         let fileContent = fs.readFileSync(inputFilePath, 'utf-8');
 
-        // Map pour stocker les déclarations de constantes (const/let)
-        const constants = new Map();
+
+        // Liste des mots réservés à interdire comme nom de constante
+        const reservedWords = ['function', 'const', 'let', 'if', 'else', 'for', 'while', 'return'];
 
         // Regex pour trouver les déclarations de constantes comme "const hi = say 'hi';"
         const constantRegex = /(?:const|let)\s+(\w+)\s*=\s*(.*?);/g;
+        // Regex pour trouver les déclarations incorrectes
+        const invalidConstRegex = /(?:const|let)\s+(\w+)\s*=\s*([^;]*)(?!;)/g;
+        // Regex pour trouver les déclarations incomplètes
+        const incompleteConstRegex = /(?:const|let)\s+(\w+)\s*=\s*;/g;
+        // Regex pour trouver les déclarations syntaxiquement invalides
+        const syntaxErrorRegex = /(?:const|let)\s+(\w+)\s*([^=;]*);/g;
 
+        // Vérification des erreurs de déclaration
+        if (invalidConstRegex.test(fileContent)) {
+            console.error('[JMC-Plus] Erreur : Déclaration de constante sans point-virgule.');
+            return;
+        }
+        if (incompleteConstRegex.test(fileContent)) {
+            console.error('[JMC-Plus] Erreur : Déclaration de constante incomplète (valeur manquante).');
+            return;
+        }
+        if (syntaxErrorRegex.test(fileContent)) {
+            console.error('[JMC-Plus] Erreur : Syntaxe invalide dans la déclaration de constante.');
+            return;
+        }
+
+        // On extrait toutes les constantes
+        const constants = new Map();
         let match;
-        // On parcourt toutes les correspondances pour extraire les constantes
         while ((match = constantRegex.exec(fileContent)) !== null) {
-            const varName = match[1]; // Le nom de la constante (ex: hi)
-            const varValue = match[2]; // La valeur de la constante (ex: say 'hi')
+            const varName = match[1];
+            const varValue = match[2];
+            if (reservedWords.includes(varName)) {
+                console.error(`[JMC-Plus] Erreur : Le nom de constante '${varName}' est un mot réservé.`);
+                return;
+            }
+            if (constants.has(varName)) {
+                console.error(`[JMC-Plus] Erreur : La constante '${varName}' est redéfinie.`);
+                return;
+            }
+            if (!varValue || varValue.trim() === '') {
+                console.error(`[JMC-Plus] Erreur : La constante '${varName}' n'a pas de valeur.`);
+                return;
+            }
             constants.set(varName, varValue);
         }
 
-        // On remplace toutes les occurrences des constantes dans le code d'origine
-        for (const [varName, varValue] of constants.entries()) {
-            // Regex pour trouver la variable (hi) sans le point-virgule
-            const usageRegex = new RegExp(`\\b${varName}\\b`, 'g');
-            // On remplace la variable par sa valeur
-            fileContent = fileContent.replace(usageRegex, varValue);
-        }
-
-        // Retire toutes les déclarations de constantes du code
+        // On retire toutes les déclarations de constantes du code AVANT le remplacement
         let transformedContent = fileContent.replace(constantRegex, '');
+
+        // On ignore le remplacement dans les lignes de commentaires
+        const lines = transformedContent.split(/\r?\n/);
+        // Pour vérifier l'utilisation de constantes non déclarées
+        const allConstNames = Array.from(constants.keys());
+        for (let i = 0; i < lines.length; i++) {
+            // Si la ligne n'est pas un commentaire
+            if (!/^\s*\/\//.test(lines[i])) {
+                for (const [varName, varValue] of constants.entries()) {
+                    // Regex : mot isolé, non suivi de '(' (negative lookahead)
+                    const usageRegex = new RegExp(`\\b${varName}\\b(?!\\s*\\()`, 'g');
+                    lines[i] = lines[i].replace(usageRegex, varValue);
+                }
+                // Vérifie l'utilisation de constantes non déclarées (hors déclaration et hors fonction/appel)
+                const usageCheckRegex = /\b(\w+)\b(?!\s*\()/g;
+                let usageMatch;
+                while ((usageMatch = usageCheckRegex.exec(lines[i])) !== null) {
+                    const usedName = usageMatch[1];
+                    // Ignore si c'est une constante connue ou un mot réservé
+                    if (!allConstNames.includes(usedName) && !reservedWords.includes(usedName)) {
+                        // Ignore si la ligne est vide ou une déclaration de fonction
+                        if (!/^\s*$/.test(lines[i]) && !/^\s*function\b/.test(lines[i])) {
+                            console.error(`[JMC-Plus] Erreur : Utilisation de la constante '${usedName}' non déclarée à la ligne ${i + 1}.`);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+        transformedContent = lines.join('\n');
 
         // Retire les lignes vides résultantes
         transformedContent = transformedContent.replace(/^\s*[\r\n]/gm, '').trim();
