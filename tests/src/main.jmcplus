@@ -1,5 +1,9 @@
-const test = say 'hello';
-const alo = 'hey';
-test;
+const test = 'global';
+function test() {
+    const test = 'hello';
+    const fullcmd = say test;
+    fullcmd;
+}
 
-printf(alo);
+test;
+fullcmd;
