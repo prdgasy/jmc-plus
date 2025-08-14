@@ -1,2 +1,2 @@
-// test
 say 'hello';
+printf('hey');
