@@ -63,5 +63,5 @@ compileJMCPlus(
     'tests/generated/main.jmc',   // Chemin du fichier de sortie
     'testnamespace',    // Namespace
     71,              // Pack format
-    `${process.cwd()}tests/out` /* Répertoire de travail actuel*/
+    `${process.cwd()}tests/out` // Répertoire de travail actuel
 );
