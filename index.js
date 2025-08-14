@@ -1,11 +1,12 @@
 // index.js
 import * as fs from 'fs';
 import * as path from 'path';
-import { exec } from 'child_process';
+import { spawn } from 'child_process';
+import { deserialize } from 'v8';
 
 // Fonction principale pour compiler un fichier JMC-Plus
-function compileJMCPlus(inputFilePath) {
-    console.log(`[JMC-Plus] Démarrage de la compilation pour le fichier : ${inputFilePath}`);
+function compileJMCPlus(inputFilePath, outputFilePath, namespace, packformat, cwd) {
+    console.log(`[JMC-Plus] Démarrage de la compilation: inputFilePath=${inputFilePath}, outputFilePath=${outputFilePath}, namespace=${namespace}, packformat=${packformat}, cwd=${cwd}`);
 
     // Vérifie si le fichier d'entrée existe
     if (!fs.existsSync(inputFilePath)) {
@@ -45,39 +46,22 @@ function compileJMCPlus(inputFilePath) {
         // Retire les lignes vides résultantes
         transformedContent = transformedContent.replace(/^\s*[\r\n]/gm, '').trim();
 
-        // Détermine le nom du fichier de sortie .jmc
-        const outputFilePath = inputFilePath.replace('.jmcplus', '.jmc');
-
         // Écrit le contenu transformé dans le nouveau fichier .jmc
         fs.writeFileSync(outputFilePath, transformedContent, 'utf-8');
 
         console.log(`[JMC-Plus] Fichier JMC généré avec succès : ${outputFilePath}`);
         console.log(`[JMC-Plus] Lancement de la compilation JMC...`);
-
-        // Obtient le nom de fichier et le répertoire pour l'exécution
-        const outputDir = path.dirname(outputFilePath);
-        const outputFileName = path.basename(outputFilePath);
-
-        // Exécute la commande python -m jmc compile, en spécifiant le répertoire de travail (cwd)
-        // La commande est maintenant une seule chaîne de caractères pour éviter les erreurs d'arguments
-        const jmcCommand = `python -m jmc compile ${outputFileName}`;
-        exec(jmcCommand, { cwd: outputDir }, (error, stdout, stderr) => {
-            if (error) {
-                console.error(`[JMC-Plus] Erreur lors de l'exécution de la commande JMC: ${error.message}`);
-                return;
-            }
-            if (stderr) {
-                console.error(`[JMC-Plus] Erreur de JMC: ${stderr}`);
-                return;
-            }
-            console.log(`[JMC-Plus] Sortie de JMC:\n${stdout}`);
-            console.log(`[JMC-Plus] Compilation JMC terminée avec succès.`);
-        });
+        console.log(`[JMC-Plus] Compilation terminé dans ${cwd}`);
 
     } catch (err) {
         console.error(`[JMC-Plus] Une erreur s'est produite: ${err}`);
     }
 }
 
-// Appel direct de la fonction de compilation pour un fichier de test
-compileJMCPlus('test.jmcplus');
+compileJMCPlus(
+    'tests/src/main.jmcplus', // Chemin du fichier d'entrée
+    'tests/generated/main.jmc',   // Chemin du fichier de sortie
+    'testnamespace',    // Namespace
+    71,              // Pack format
+    `${process.cwd()}tests/out` /* Répertoire de travail actuel*/
+);
