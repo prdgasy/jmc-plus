@@ -1,0 +1,1 @@
+const 'Hello, JMC Plus!' = 'Hello, JMC Plus!';const say 'full cmd ?' = say 'full cmd ?';function say 'full cmd ?'() {    printf('Hello, JMC Plus!');    say 'full cmd ?';}

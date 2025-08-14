@@ -1,1 +1,0 @@
-const 'Hello, JMC Plus!' = 'Hello, JMC Plus!';const say 'Hello from JMC Plus!' = say 'Hello from JMC Plus!';function test() {    print('Hello, JMC Plus!');    say 'Hello from JMC Plus!';}

@@ -1,10 +1,10 @@
-// index.ts
+// index.js
 import * as fs from 'fs';
 import * as path from 'path';
 import { exec } from 'child_process';
 
 // Fonction principale pour compiler un fichier JMC-Plus
-function compileJMCPlus(inputFilePath: string) {
+function compileJMCPlus(inputFilePath) {
     console.log(`[JMC-Plus] Démarrage de la compilation pour le fichier : ${inputFilePath}`);
 
     // Vérifie si le fichier d'entrée existe
@@ -18,7 +18,7 @@ function compileJMCPlus(inputFilePath: string) {
         let fileContent = fs.readFileSync(inputFilePath, 'utf-8');
 
         // Map pour stocker les déclarations de constantes (const/let)
-        const constants = new Map<string, string>();
+        const constants = new Map();
 
         // Regex pour trouver les déclarations de constantes comme "const hi = say 'hi';"
         const constantRegex = /(?:const|let)\s+(\w+)\s*=\s*(.*?);/g;
@@ -59,6 +59,7 @@ function compileJMCPlus(inputFilePath: string) {
         const outputFileName = path.basename(outputFilePath);
 
         // Exécute la commande python -m jmc compile, en spécifiant le répertoire de travail (cwd)
+        // La commande est maintenant une seule chaîne de caractères pour éviter les erreurs d'arguments
         const jmcCommand = `python -m jmc compile ${outputFileName}`;
         exec(jmcCommand, { cwd: outputDir }, (error, stdout, stderr) => {
             if (error) {

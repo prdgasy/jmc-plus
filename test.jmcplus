@@ -1,0 +1,7 @@
+const hello = 'Hello, JMC Plus!';
+const test = say 'full cmd ?';
+
+function test() {
+    printf(hello);
+    test;
+}
