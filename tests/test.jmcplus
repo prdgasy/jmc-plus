@@ -1,0 +1,7 @@
+const hello = 'Hello, JMC Plus!';
+const sayhello = say 'Hello from JMC Plus!';
+
+function test() {
+    print(hello);
+    sayhello;
+}
